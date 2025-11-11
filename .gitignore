@@ -28,3 +28,6 @@ go.work
 # OS
 .DS_Store
 Thumbs.db
+
+# Web frontend (now in separate booker-web repository)
+web/

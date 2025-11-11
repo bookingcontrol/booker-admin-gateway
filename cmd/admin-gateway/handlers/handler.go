@@ -6,9 +6,9 @@ import (
 
 	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/config"
 	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/middleware"
-	bookingpb "github.com/bookingcontrol/booker-contracts-go/v1/booking"
-	venuepb "github.com/bookingcontrol/booker-contracts-go/v1/venue"
 	"github.com/bookingcontrol/booker-admin-gateway/internal/redis"
+	bookingpb "github.com/bookingcontrol/booker-contracts-go/booking"
+	venuepb "github.com/bookingcontrol/booker-contracts-go/venue"
 )
 
 type Handler struct {

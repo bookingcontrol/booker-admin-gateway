@@ -9,9 +9,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	bookingpb "github.com/bookingcontrol/booker-contracts-go/v1/booking"
-	commonpb "github.com/bookingcontrol/booker-contracts-go/v1/common"
-	venuepb "github.com/bookingcontrol/booker-contracts-go/v1/venue"
+	bookingpb "github.com/bookingcontrol/booker-contracts-go/booking"
+	commonpb "github.com/bookingcontrol/booker-contracts-go/common"
+	venuepb "github.com/bookingcontrol/booker-contracts-go/venue"
 )
 
 // Auth handlers
