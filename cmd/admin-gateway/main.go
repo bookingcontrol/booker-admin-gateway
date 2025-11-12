@@ -13,61 +13,59 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/config"
-	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/handlers"
-	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/middleware"
-	"github.com/bookingcontrol/booker-admin-gateway/internal/redis"
-	"github.com/bookingcontrol/booker-admin-gateway/internal/tracing"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/config"
+	httpadp "github.com/bookingcontrol/booker-admin-gateway/internal/adapter/http"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/adapter/http/middleware"
+	grpcadp "github.com/bookingcontrol/booker-admin-gateway/internal/adapter/grpc"
+	redisadp "github.com/bookingcontrol/booker-admin-gateway/internal/adapter/redis"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/infrastructure/redis"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/infrastructure/tracing"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/usecase/auth"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/usecase/venue"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/usecase/booking"
+	bookingpb "github.com/bookingcontrol/booker-contracts-go/booking"
+	venuepb "github.com/bookingcontrol/booker-contracts-go/venue"
 )
 
 func main() {
 	cfg := config.Load()
 
-	// Logger
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	if cfg.Env == "development" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
-	// Tracing
 	shutdown, err := tracing.InitTracer("admin-gateway", cfg.JaegerEndpoint)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize tracer")
 	}
 	defer shutdown()
 
-	// Redis
 	redisClient := redis.NewClient(cfg.RedisAddr, cfg.RedisPassword)
 
-	// gRPC clients
-	venueConn, err := grpc.Dial(
-		cfg.GRPCVenueAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+	venueConn, err := grpc.Dial(cfg.GRPCVenueAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to connect to venue service")
 	}
 	defer venueConn.Close()
 
-	bookingConn, err := grpc.Dial(
-		cfg.GRPCBookingAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+	bookingConn, err := grpc.Dial(cfg.GRPCBookingAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to connect to booking service")
 	}
 	defer bookingConn.Close()
 
-	// Handlers
-	h := handlers.New(venueConn, bookingConn, redisClient, cfg)
+	authRepo := redisadp.NewAuthRepo(redisClient)
+	venueRepo := grpcadp.NewVenueRepo(venuepb.NewVenueServiceClient(venueConn))
+	bookingRepo := grpcadp.NewBookingRepo(bookingpb.NewBookingServiceClient(bookingConn))
 
-	// Middleware
+	authSvc := auth.NewService(authRepo)
+	venueSvc := venue.NewService(venueRepo)
+	bookingSvc := booking.NewService(bookingRepo)
+
 	mw := middleware.New(redisClient, cfg)
+	e := httpadp.SetupRouter(authSvc, venueSvc, bookingSvc, mw)
 
-	// Setup routes
-	e := h.SetupRoutes(mw)
-
-	// Graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 

@@ -52,6 +52,3 @@ func (c *Client) HGet(ctx context.Context, key, field string) (string, error) {
 func (c *Client) Exists(ctx context.Context, keys ...string) (int64, error) {
 	return c.Client.Exists(ctx, keys...).Result()
 }
-
-
-
