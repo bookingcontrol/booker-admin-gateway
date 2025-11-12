@@ -89,5 +89,3 @@ func main() {
 		log.Error().Err(err).Msg("Server shutdown error")
 	}
 }
-
-
