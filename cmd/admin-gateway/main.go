@@ -77,7 +77,7 @@ func main() {
 		}
 	}()
 
-	log.Info().Int("port", cfg.Port).Msg("Admin gateway startd")
+	log.Info().Int("port", cfg.Port).Msg("Admin gateway started")
 
 	<-ctx.Done()
 	log.Info().Msg("Shutting down...")
