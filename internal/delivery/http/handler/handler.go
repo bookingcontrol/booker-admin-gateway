@@ -1,39 +1,22 @@
-package handlers
+package handler
 
 import (
+	"github.com/bookingcontrol/booker-admin-gateway/internal/delivery/http/middleware"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/usecase"
 	"github.com/labstack/echo/v4"
-	"google.golang.org/grpc"
-
-	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/config"
-	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/middleware"
-	"github.com/bookingcontrol/booker-admin-gateway/internal/redis"
-	bookingpb "github.com/bookingcontrol/booker-contracts-go/booking"
-	venuepb "github.com/bookingcontrol/booker-contracts-go/venue"
 )
 
 type Handler struct {
-	venueClient   venuepb.VenueServiceClient
-	bookingClient bookingpb.BookingServiceClient
-	redisClient   *redis.Client
-	cfg           *config.Config
+	authUseCase    usecase.AuthUseCase
+	venueUseCase   usecase.VenueUseCase
+	bookingUseCase usecase.BookingUseCase
 }
 
-func New(venueConn, bookingConn *grpc.ClientConn, redisClient *redis.Client, cfg *config.Config) *Handler {
+func New(authUseCase usecase.AuthUseCase, venueUseCase usecase.VenueUseCase, bookingUseCase usecase.BookingUseCase) *Handler {
 	return &Handler{
-		venueClient:   venuepb.NewVenueServiceClient(venueConn),
-		bookingClient: bookingpb.NewBookingServiceClient(bookingConn),
-		redisClient:   redisClient,
-		cfg:           cfg,
-	}
-}
-
-// NewWithClients создает Handler с готовыми клиентами (для тестов)
-func NewWithClients(venueClient venuepb.VenueServiceClient, bookingClient bookingpb.BookingServiceClient, redisClient *redis.Client, cfg *config.Config) *Handler {
-	return &Handler{
-		venueClient:   venueClient,
-		bookingClient: bookingClient,
-		redisClient:   redisClient,
-		cfg:           cfg,
+		authUseCase:    authUseCase,
+		venueUseCase:   venueUseCase,
+		bookingUseCase: bookingUseCase,
 	}
 }
 

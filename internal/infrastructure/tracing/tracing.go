@@ -44,4 +44,3 @@ func StartSpan(ctx context.Context, name string) (context.Context, trace.Span) {
 	return tracer.Start(ctx, name)
 }
 
-

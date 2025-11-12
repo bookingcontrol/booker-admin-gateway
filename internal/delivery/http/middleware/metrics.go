@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
-	"github.com/bookingcontrol/booker-admin-gateway/internal/metrics"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/infrastructure/metrics"
 )
 
 func MetricsMiddleware(serviceName string) echo.MiddlewareFunc {

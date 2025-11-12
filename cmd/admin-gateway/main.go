@@ -13,11 +13,15 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/config"
-	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/handlers"
-	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/middleware"
-	"github.com/bookingcontrol/booker-admin-gateway/internal/redis"
-	"github.com/bookingcontrol/booker-admin-gateway/internal/tracing"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/config"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/delivery/http/handler"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/delivery/http/middleware"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/infrastructure/redis"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/infrastructure/repository"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/infrastructure/tracing"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/usecase"
+	bookingpb "github.com/bookingcontrol/booker-contracts-go/booking"
+	venuepb "github.com/bookingcontrol/booker-contracts-go/venue"
 )
 
 func main() {
@@ -58,10 +62,20 @@ func main() {
 	}
 	defer bookingConn.Close()
 
-	// Handlers
-	h := handlers.New(venueConn, bookingConn, redisClient, cfg)
+	// Initialize repositories
+	userRepo := repository.NewUserRepository(redisClient)
+	venueRepo := repository.NewVenueRepository(venuepb.NewVenueServiceClient(venueConn))
+	bookingRepo := repository.NewBookingRepository(bookingpb.NewBookingServiceClient(bookingConn))
 
-	// Middleware
+	// Initialize use cases
+	authUseCase := usecase.NewAuthUseCase(userRepo)
+	venueUseCase := usecase.NewVenueUseCase(venueRepo)
+	bookingUseCase := usecase.NewBookingUseCase(bookingRepo)
+
+	// Initialize handlers
+	h := handler.New(authUseCase, venueUseCase, bookingUseCase)
+
+	// Initialize middleware
 	mw := middleware.New(redisClient, cfg)
 
 	// Setup routes

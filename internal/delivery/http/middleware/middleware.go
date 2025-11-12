@@ -8,8 +8,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog/log"
 
-	"github.com/bookingcontrol/booker-admin-gateway/cmd/admin-gateway/config"
-	"github.com/bookingcontrol/booker-admin-gateway/internal/redis"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/config"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/infrastructure/redis"
 )
 
 type Middleware struct {
@@ -105,3 +105,4 @@ func (m *Middleware) SetupMiddleware(e *echo.Echo) {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 }
+
