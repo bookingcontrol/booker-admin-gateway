@@ -1,4 +1,4 @@
-package repository
+package booking
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	bookingpb "github.com/bookingcontrol/booker-contracts-go/booking"
 )
 
-// BookingRepository defines interface for booking service operations
-type BookingRepository interface {
+// Repository defines interface for booking service operations
+type Repository interface {
 	ListBookings(ctx context.Context, req *bookingpb.ListBookingsRequest) (*bookingpb.ListBookingsResponse, error)
 	GetBooking(ctx context.Context, id string) (*bookingpb.Booking, error)
 	CreateBooking(ctx context.Context, req *bookingpb.CreateBookingRequest) (*bookingpb.Booking, error)
