@@ -15,9 +15,104 @@ import (
 )
 
 // Auth handlers
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type RegisterRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email,omitempty"`
+}
+
+func (h *Handler) Register(c echo.Context) error {
+	var req RegisterRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+
+	if req.Username == "" || req.Password == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "username and password are required"})
+	}
+
+	// Check if user already exists
+	ctx := c.Request().Context()
+	exists, err := h.redisClient.Exists(ctx, "user:"+req.Username)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to check user existence")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+	if exists > 0 {
+		return c.JSON(http.StatusConflict, map[string]string{"error": "username already exists"})
+	}
+
+	// Store user (in production, hash password with bcrypt)
+	// For now, simple storage in Redis
+	userData := map[string]interface{}{
+		"username": req.Username,
+		"password": req.Password, // TODO: Hash password
+		"email":    req.Email,
+	}
+
+	if err := h.redisClient.HSet(ctx, "user:"+req.Username, userData); err != nil {
+		log.Error().Err(err).Msg("Failed to store user")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create user"})
+	}
+
+	log.Info().Str("username", req.Username).Msg("User registered")
+
+	// Return success (in production, return JWT token)
+	return c.JSON(http.StatusCreated, map[string]string{
+		"message":  "User registered successfully",
+		"username": req.Username,
+	})
+}
+
 func (h *Handler) Login(c echo.Context) error {
-	// TODO: Implement JWT login
-	return c.JSON(http.StatusOK, map[string]string{"token": "dummy-token"})
+	var req LoginRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+
+	if req.Username == "" || req.Password == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "username and password are required"})
+	}
+
+	ctx := c.Request().Context()
+
+	// Check if user exists
+	exists, err := h.redisClient.Exists(ctx, "user:"+req.Username)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to check user existence")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+	if exists == 0 {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
+	}
+
+	// Get user data
+	password, err := h.redisClient.HGet(ctx, "user:"+req.Username, "password")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user password")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+
+	// Check password (in production, compare hashed password)
+	if password != req.Password {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
+	}
+
+	// Generate token (in production, use JWT)
+	// For now, return a simple token
+	token := "token-" + req.Username // TODO: Generate proper JWT
+
+	log.Info().Str("username", req.Username).Msg("User logged in")
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"access_token":  token,
+		"refresh_token": "refresh-" + req.Username, // TODO: Generate proper refresh token
+	})
 }
 
 func (h *Handler) RefreshToken(c echo.Context) error {
@@ -60,6 +155,8 @@ func (h *Handler) CreateVenue(c echo.Context) error {
 		Name     string `json:"name"`
 		Timezone string `json:"timezone"`
 		Address  string `json:"address"`
+		Phone    string `json:"phone"`
+		Email    string `json:"email"`
 	}
 	if err := c.Bind(&req); err != nil {
 		log.Warn().Err(err).Msg("Failed to bind CreateVenue request")
@@ -70,12 +167,16 @@ func (h *Handler) CreateVenue(c echo.Context) error {
 		Str("name", req.Name).
 		Str("timezone", req.Timezone).
 		Str("address", req.Address).
+		Str("phone", req.Phone).
+		Str("email", req.Email).
 		Msg("Creating venue")
 
 	resp, err := h.venueClient.CreateVenue(c.Request().Context(), &venuepb.CreateVenueRequest{
 		Name:     req.Name,
 		Timezone: req.Timezone,
 		Address:  req.Address,
+		Phone:    req.Phone,
+		Email:    req.Email,
 	})
 	if err != nil {
 		log.Error().Err(err).
@@ -96,6 +197,8 @@ func (h *Handler) UpdateVenue(c echo.Context) error {
 	var req struct {
 		Name    string `json:"name"`
 		Address string `json:"address"`
+		Phone   string `json:"phone"`
+		Email   string `json:"email"`
 	}
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -105,6 +208,8 @@ func (h *Handler) UpdateVenue(c echo.Context) error {
 		Id:      c.Param("id"),
 		Name:    req.Name,
 		Address: req.Address,
+		Phone:   req.Phone,
+		Email:   req.Email,
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -115,9 +220,9 @@ func (h *Handler) UpdateVenue(c echo.Context) error {
 
 func (h *Handler) DeleteVenue(c echo.Context) error {
 	venueID := c.Param("id")
-	
+
 	log.Info().Str("venue_id", venueID).Msg("Deleting venue")
-	
+
 	_, err := h.venueClient.DeleteVenue(c.Request().Context(), &venuepb.DeleteVenueRequest{
 		Id: venueID,
 	})
@@ -272,6 +377,7 @@ func (h *Handler) UpdateTable(c echo.Context) error {
 	var req struct {
 		Name     string `json:"name"`
 		Capacity int32  `json:"capacity"`
+		CanMerge bool   `json:"can_merge"`
 		Zone     string `json:"zone"`
 	}
 	if err := c.Bind(&req); err != nil {
@@ -282,6 +388,7 @@ func (h *Handler) UpdateTable(c echo.Context) error {
 		Id:       c.Param("id"),
 		Name:     req.Name,
 		Capacity: req.Capacity,
+		CanMerge: req.CanMerge,
 		Zone:     req.Zone,
 	})
 	if err != nil {
