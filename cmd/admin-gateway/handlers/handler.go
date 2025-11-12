@@ -67,7 +67,8 @@ func (h *Handler) SetupRoutes(mw *middleware.Middleware) *echo.Echo {
 		})
 	})
 
-	// Auth
+	// Auth (public routes, no auth required)
+	api.POST("/auth/register", h.Register)
 	api.POST("/auth/login", h.Login)
 	api.POST("/auth/refresh", h.RefreshToken)
 

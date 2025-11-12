@@ -32,7 +32,7 @@ func (m *Middleware) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			Str("method", c.Request().Method).
 			Str("auth_header", authHeader).
 			Msg("AuthMiddleware: checking request")
-		
+
 		if authHeader == "" {
 			log.Warn().
 				Str("path", c.Path()).
@@ -105,5 +105,3 @@ func (m *Middleware) SetupMiddleware(e *echo.Echo) {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 }
-
-

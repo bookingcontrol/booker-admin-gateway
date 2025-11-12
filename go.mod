@@ -3,7 +3,7 @@ module github.com/bookingcontrol/booker-admin-gateway
 go 1.23.0
 
 require (
-	github.com/bookingcontrol/booker-contracts-go v1.0.5
+	github.com/bookingcontrol/booker-contracts-go v1.0.7
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/v9 v9.5.1

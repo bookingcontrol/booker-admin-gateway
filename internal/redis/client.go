@@ -41,5 +41,17 @@ func (c *Client) Expire(ctx context.Context, key string, expiration time.Duratio
 	return c.Client.Expire(ctx, key, expiration).Err()
 }
 
+func (c *Client) HSet(ctx context.Context, key string, values ...interface{}) error {
+	return c.Client.HSet(ctx, key, values...).Err()
+}
+
+func (c *Client) HGet(ctx context.Context, key, field string) (string, error) {
+	return c.Client.HGet(ctx, key, field).Result()
+}
+
+func (c *Client) Exists(ctx context.Context, keys ...string) (int64, error) {
+	return c.Client.Exists(ctx, keys...).Result()
+}
+
 
 
