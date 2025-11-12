@@ -265,9 +265,13 @@ func (h *VenueHandler) SetSpecialHours(c echo.Context) error {
 
 func (h *VenueHandler) CheckAvailability(c echo.Context) error {
 	var req struct {
-		VenueID  string
-		Slot     struct{ Date, StartTime string; DurationMinutes int32 }
-		PartySize int32
+		VenueID   string `json:"venue_id"`
+		Slot      struct {
+			Date            string `json:"date"`
+			StartTime       string `json:"start_time"`
+			DurationMinutes int32  `json:"duration_minutes"`
+		} `json:"slot"`
+		PartySize int32 `json:"party_size"`
 	}
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})

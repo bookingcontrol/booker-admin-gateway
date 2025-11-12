@@ -45,14 +45,22 @@ func (h *BookingHandler) GetBooking(c echo.Context) error {
 
 func (h *BookingHandler) CreateBooking(c echo.Context) error {
 	var req struct {
-		VenueID        string
-		Table          struct{ VenueID, RoomID, TableID string }
-		Slot           struct{ Date, StartTime string; DurationMinutes int32 }
-		PartySize      int32
-		CustomerName   string
-		CustomerPhone  string
-		Comment        string
-		IdempotencyKey string
+		VenueID        string `json:"venue_id"`
+		Table          struct {
+			VenueID string `json:"venue_id"`
+			RoomID  string `json:"room_id"`
+			TableID string `json:"table_id"`
+		} `json:"table"`
+		Slot struct {
+			Date            string `json:"date"`
+			StartTime       string `json:"start_time"`
+			DurationMinutes int32  `json:"duration_minutes"`
+		} `json:"slot"`
+		PartySize      int32  `json:"party_size"`
+		CustomerName   string `json:"customer_name"`
+		CustomerPhone  string `json:"customer_phone"`
+		Comment        string `json:"comment"`
+		IdempotencyKey string `json:"idempotency_key"`
 	}
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
