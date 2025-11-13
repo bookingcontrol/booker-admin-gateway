@@ -13,16 +13,16 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/bookingcontrol/booker-admin-gateway/internal/config"
+	grpcadp "github.com/bookingcontrol/booker-admin-gateway/internal/adapter/grpc"
 	httpadp "github.com/bookingcontrol/booker-admin-gateway/internal/adapter/http"
 	"github.com/bookingcontrol/booker-admin-gateway/internal/adapter/http/middleware"
-	grpcadp "github.com/bookingcontrol/booker-admin-gateway/internal/adapter/grpc"
 	redisadp "github.com/bookingcontrol/booker-admin-gateway/internal/adapter/redis"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/config"
 	"github.com/bookingcontrol/booker-admin-gateway/internal/infrastructure/redis"
 	"github.com/bookingcontrol/booker-admin-gateway/internal/infrastructure/tracing"
 	"github.com/bookingcontrol/booker-admin-gateway/internal/usecase/auth"
-	"github.com/bookingcontrol/booker-admin-gateway/internal/usecase/venue"
 	"github.com/bookingcontrol/booker-admin-gateway/internal/usecase/booking"
+	"github.com/bookingcontrol/booker-admin-gateway/internal/usecase/venue"
 	bookingpb "github.com/bookingcontrol/booker-contracts-go/booking"
 	venuepb "github.com/bookingcontrol/booker-contracts-go/venue"
 )
@@ -35,7 +35,7 @@ func main() {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
-	shutdown, err := tracing.InitTracer("admin-gateway", cfg.JaegerEndpoint)
+	shutdown, err := tracing.InitTracer("admin-gateway", cfg.OTLPEndpoint)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize tracer")
 	}

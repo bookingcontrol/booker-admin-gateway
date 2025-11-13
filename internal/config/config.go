@@ -13,7 +13,7 @@ type Config struct {
 	RedisAddr      string
 	RedisPassword  string
 	JWTSecret      string
-	JaegerEndpoint string
+	OTLPEndpoint   string // OTLP endpoint (e.g., "localhost:4318")
 }
 
 func Load() *Config {
@@ -25,7 +25,7 @@ func Load() *Config {
 		RedisAddr:      getEnv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
 		JWTSecret:      getEnv("JWT_SECRET", "change-me-in-production"),
-		JaegerEndpoint: getEnv("JAEGER_ENDPOINT", "http://localhost:14268/api/traces"),
+		OTLPEndpoint:   getEnv("OTLP_ENDPOINT", "localhost:4318"),
 	}
 }
 
